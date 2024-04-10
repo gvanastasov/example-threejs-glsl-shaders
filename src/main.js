@@ -32,7 +32,7 @@ function app() {
         this._scene = new THREE.Scene();
 
         let dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.0);
-        dirLight.position.set(20, 100, 10);
+        dirLight.position.set(50, 100, 10);
         dirLight.target.position.set(0, 0, 0);
         dirLight.castShadow = true;
         dirLight.shadow.bias = -0.001;
@@ -61,6 +61,12 @@ function app() {
         plane.receiveShadow = true;
         plane.rotation.x = -Math.PI / 2;
         this._scene.add(plane);
+
+        const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+        const geometry = new THREE.SphereGeometry(8, 32, 32);
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(0, 10, 0);
+        this._scene.add(mesh);
 
         this._controls = new OrbitControls(this._camera, this._renderer.domElement);
         this._controls.target.set(0, 0, 0);
