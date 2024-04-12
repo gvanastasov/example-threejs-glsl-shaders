@@ -2,11 +2,13 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+import { GUI } from 'dat.gui';
 
 import Shaders from './shaders';
 
 function app() {
     this._el = document.getElementById('app');
+    this._gui = new GUI();
     this._composer = null;
     this._controls = null;
     this._scene = null;
@@ -19,7 +21,7 @@ function app() {
         this.configure();
         this.render();
     }
-
+    this._light = null;
     this.configure = function() {
         this._renderer = new THREE.WebGLRenderer({ antialias: true });
         this._renderer.setSize(window.innerWidth, window.innerHeight);
@@ -35,25 +37,74 @@ function app() {
 
         this._scene = new THREE.Scene();
 
-        let dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.0);
-        dirLight.position.set(50, 100, 10);
-        dirLight.target.position.set(0, 0, 0);
-        dirLight.castShadow = true;
-        dirLight.shadow.bias = -0.001;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
-        dirLight.shadow.camera.near = 0.1;
-        dirLight.shadow.camera.far = 500.0;
-        dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 500.0;
-        dirLight.shadow.camera.left = 100;
-        dirLight.shadow.camera.right = -100;
-        dirLight.shadow.camera.top = 100;
-        dirLight.shadow.camera.bottom = -100;
-        this._scene.add(dirLight);
+        let light = new THREE.DirectionalLight(0xFFFFFF, 1.0);
+        light.position.set(50, 100, 10);
+        light.target.position.set(-1, -1, 0);
+        light.target.updateMatrixWorld();
+        light.castShadow = true;
+        light.shadow.bias = -0.001;
+        light.shadow.mapSize.width = 2048;
+        light.shadow.mapSize.height = 2048;
+        light.shadow.camera.near = 0.1;
+        light.shadow.camera.far = 500.0;
+        light.shadow.camera.near = 0.5;
+        light.shadow.camera.far = 500.0;
+        light.shadow.camera.left = 100;
+        light.shadow.camera.right = -100;
+        light.shadow.camera.top = 100;
+        light.shadow.camera.bottom = -100;
+        light.add(light.target);
+        this._scene.add(light);
+        this._light = light;
 
-        let ambientLight = new THREE.AmbientLight(0x101010);
-        this._scene.add(ambientLight);
+        const directionalLightHelper = new THREE.DirectionalLightHelper(light, 3);
+        // directionalLightHelper.visible = false;
+        this._scene.add(directionalLightHelper);
+        directionalLightHelper.update(); 
+
+        const lightColorControl = function (l) {
+            this.color = l.color.getHex();
+        }
+        const lcc = new lightColorControl(light);
+        const lightFolder = this._gui.addFolder('Directional Light');
+        lightFolder.add(light, 'intensity', 0, 10).name('Intensity');
+        lightFolder.addColor(lcc, 'color').name('Color').onChange(function(color) {
+            light.color = new THREE.Color(color);
+        });
+        const positionFolder = lightFolder.addFolder('Position');
+        positionFolder.add(light.position, 'x').name('X');
+        positionFolder.add(light.position, 'y').name('Y');
+        positionFolder.add(light.position, 'z').name('Z');
+        positionFolder.domElement.addEventListener('click', () => {
+            directionalLightHelper.visible = !positionFolder.closed;
+        })
+
+        const direction = new THREE.Vector3();
+        direction.subVectors(light.target.position, light.position).normalize();
+
+        // Calculate Euler angles from the direction vector
+        const euler = new THREE.Euler();
+        euler.setFromVector3(direction);
+
+        // Convert Euler angles from radians to degrees
+        const initialRotationX = THREE.MathUtils.radToDeg(euler.x);
+        const initialRotationY = THREE.MathUtils.radToDeg(euler.y);
+        const initialRotationZ = THREE.MathUtils.radToDeg(euler.z);
+
+        const rotationFolder = lightFolder.addFolder('Rotation');
+        rotationFolder.add(light.rotation, 'x', 0, 360).name('X').setValue(initialRotationX).onChange(function(value) {
+            light.rotation.x = THREE.MathUtils.degToRad(value);
+        });
+        rotationFolder.add(light.rotation, 'y', 0, 360).name('Y').setValue(initialRotationY).onChange(function(value) {
+            light.rotation.y = THREE.MathUtils.degToRad(value);
+        });
+        rotationFolder.add(light.rotation, 'z', 0, 360).name('Z').setValue(initialRotationZ).onChange(function(value) {
+            light.rotation.z = THREE.MathUtils.degToRad(value);
+        });
+        lightFolder.open();
+
+        // let ambientLight = new THREE.AmbientLight(0x101010);
+        // this._scene.add(ambientLight);
 
         const plane = new THREE.Mesh(
             new THREE.PlaneGeometry(100, 100, 10, 10),
@@ -244,8 +295,33 @@ function app() {
                 glslVersion: THREE.GLSL3,
                 vertexShader: shader.vert,
                 fragmentShader: shader.frag,
-                uniforms,
+                uniforms: {
+                    ambientLightColor: { value: null },
+                    lightProbe: { value: null },
+                    directionalLights: { value: null },
+                    directionalLightShadows: { value: null },
+                    spotLights: { value: null },
+                    spotLightShadows: { value: null },
+                    rectAreaLights: { value: null },
+                    ltc_1: { value: null },
+                    ltc_2: { value: null },
+                    pointLights: { value: null },
+                    pointLightShadows: { value: null },
+                    hemisphereLights: { value: null },
+
+                    directionalShadowMap: { value: null },
+                    directionalShadowMatrix: { value: null },
+                    spotShadowMap: { value: null },
+                    spotLightMatrix: { value: null },
+                    spotLightMap: { value: null },
+                    pointShadowMap: { value: null },
+                    pointShadowMatrix: { value: null },
+                    ...uniforms
+                },
             });
+
+            customMaterial.name = 'Custom Material';
+            customMaterial.lights = true;
 
             customMaterial.onBeforeCompile = function(shader) {
                 // NOTE: This is a hack to remove the #version 300 es from the shaders
@@ -253,7 +329,7 @@ function app() {
                 shader.vertexShader = shader.vertexShader.replace('#version 300 es\n', '');
                 shader.fragmentShader = shader.fragmentShader.replace('#version 300 es\n', '');
             }
-            
+
             this._sphere.material = customMaterial;
 
             this.createPropertyControls(shader);
@@ -272,6 +348,8 @@ function app() {
         requestAnimationFrame(this.render);
         this._controls.update();
         this._composer.render();
+
+        console.log(JSON.stringify(this._light.target.position));
     }
 }
 
