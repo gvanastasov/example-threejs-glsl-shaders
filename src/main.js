@@ -163,43 +163,88 @@ function app() {
 
             for (let i = 0; i < shader.props.length; i++) {
                 const prop = shader.props[i];
-                const propElement = document.createElement('div');
-                propElement.classList.add('property');
 
-                const label = document.createElement('label');
-                label.htmlFor = prop.name;
-                label.innerHTML = prop.label;
+                if (prop.editable === false) continue;
 
-                const input = document.createElement('input');
-                input.type = prop.type;
-                input.id = prop.name;
-                input.value = prop.value;
-                input.oninput = (e) => {
-                    prop.value = e.target.value;
-                    
-                    this._sphere.material.uniforms[prop.name].value = 
-                        !!prop.valueParser
-                        ? prop.valueParser(prop.value)
-                        : prop.value;
+                // todo: refactor this to support more types
+                if (prop.type === 'Vector2') {
+                    const propElement = document.createElement('div');
+                    propElement.classList.add('property');
+
+                    const label = document.createElement('label');
+                    label.htmlFor = prop.name;
+                    label.innerHTML = prop.label;
+
+                    const inputX = document.createElement('input');
+                    inputX.type = 'number';
+                    inputX.id = prop.name + '-x';
+                    inputX.value = prop.value.x;
+                    inputX.step = prop.step;
+                    inputX.oninput = (e) => {
+                        prop.value.x = parseFloat(e.target.value);
+                        const value = new THREE.Vector2(prop.value.x, inputY.value);
+
+                        this._sphere.material.uniforms[prop.name].value = value;
+                    }
+
+                    const inputY = document.createElement('input');
+                    inputY.type = 'number';
+                    inputY.id = prop.name + '-y';
+                    inputY.value = prop.value.y;
+                    inputY.step = prop.step;
+                    inputY.oninput = (e) => {
+                        prop.value.y = parseFloat(e.target.value);
+
+                        const value = new THREE.Vector2(inputX.value, prop.value.y);
+
+                        this._sphere.material.uniforms[prop.name].value = value;
+                    }
+
+                    propElement.appendChild(label);
+                    propElement.appendChild(inputX);
+                    propElement.appendChild(inputY);
+                    properties.appendChild(propElement);
+                    continue;
+                } else {
+                    const propElement = document.createElement('div');
+                    propElement.classList.add('property');
+    
+                    const label = document.createElement('label');
+                    label.htmlFor = prop.name;
+                    label.innerHTML = prop.label;
+    
+                    const input = document.createElement('input');
+                    input.type = prop.type;
+                    input.id = prop.name;
+                    input.value = prop.value;
+                    input.oninput = (e) => {
+                        prop.value = e.target.value;
+                        
+                        this._sphere.material.uniforms[prop.name].value = 
+                            !!prop.valueParser
+                            ? prop.valueParser(prop.value)
+                            : prop.value;
+                    }
+    
+                    propElement.appendChild(label);
+                    propElement.appendChild(input);
+                    properties.appendChild(propElement);
                 }
 
-                propElement.appendChild(label);
-                propElement.appendChild(input);
-                properties.appendChild(propElement);
             }
         }
 
         this.updateShader = (shader) => {
+            const uniforms = shader.props.reduce((obj, prop) => {
+                obj[prop.name] = { value: prop.valueParser ? prop.valueParser(prop.value) : prop.value };
+                return obj;
+            }, {});
+
             const customMaterial = new THREE.RawShaderMaterial({
                 glslVersion: THREE.GLSL3,
                 vertexShader: shader.vert,
                 fragmentShader: shader.frag,
-                uniforms: {
-                    ...shader.props.reduce((obj, prop) => {
-                        obj[prop.name] = { value: prop.valueParser(prop.value) };
-                        return obj;
-                    }, {})
-                }
+                uniforms,
             });
 
             customMaterial.onBeforeCompile = function(shader) {
