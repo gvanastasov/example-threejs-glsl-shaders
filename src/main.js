@@ -2,13 +2,17 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
-import { GUI } from 'dat.gui';
+import * as dat from 'dat.gui';
 
 import Shaders from './shaders';
 
 function app() {
     this._el = document.getElementById('app');
-    this._gui = new GUI();
+
+    /**
+     * @type {GUI}
+     */
+    this._gui = new dat.GUI();
     this._composer = null;
     this._controls = null;
     this._scene = null;
@@ -39,8 +43,8 @@ function app() {
 
         let light = new THREE.DirectionalLight(0xFFFFFF, 1.0);
         light.position.set(50, 100, 10);
-        light.target.position.set(-1, -1, 0);
-        light.target.updateMatrixWorld();
+        light.target.position.set(0, 0, -1);
+        light.lookAt(0,0,0);
         light.castShadow = true;
         light.shadow.bias = -0.001;
         light.shadow.mapSize.width = 2048;
@@ -58,7 +62,7 @@ function app() {
         this._light = light;
 
         const directionalLightHelper = new THREE.DirectionalLightHelper(light, 3);
-        // directionalLightHelper.visible = false;
+        directionalLightHelper.visible = false;
         this._scene.add(directionalLightHelper);
         directionalLightHelper.update(); 
 
@@ -79,28 +83,22 @@ function app() {
             directionalLightHelper.visible = !positionFolder.closed;
         })
 
-        const direction = new THREE.Vector3();
-        direction.subVectors(light.target.position, light.position).normalize();
+        var rotationFolder = lightFolder.addFolder('Rotation');
+        var rotationControls = {
+            rotationX: THREE.MathUtils.radToDeg(light.rotation.x),
+            rotationY: THREE.MathUtils.radToDeg(light.rotation.y),
+            rotationZ: THREE.MathUtils.radToDeg(light.rotation.z),
+        };
+        rotationFolder.add(rotationControls, 'rotationX').name('Rotation X').onChange(updateRotation);
+        rotationFolder.add(rotationControls, 'rotationY').name('Rotation Y').onChange(updateRotation);
+        rotationFolder.add(rotationControls, 'rotationZ').name('Rotation Z').onChange(updateRotation);
+        rotationFolder.open();
 
-        // Calculate Euler angles from the direction vector
-        const euler = new THREE.Euler();
-        euler.setFromVector3(direction);
-
-        // Convert Euler angles from radians to degrees
-        const initialRotationX = THREE.MathUtils.radToDeg(euler.x);
-        const initialRotationY = THREE.MathUtils.radToDeg(euler.y);
-        const initialRotationZ = THREE.MathUtils.radToDeg(euler.z);
-
-        const rotationFolder = lightFolder.addFolder('Rotation');
-        rotationFolder.add(light.rotation, 'x', 0, 360).name('X').setValue(initialRotationX).onChange(function(value) {
-            light.rotation.x = THREE.MathUtils.degToRad(value);
-        });
-        rotationFolder.add(light.rotation, 'y', 0, 360).name('Y').setValue(initialRotationY).onChange(function(value) {
-            light.rotation.y = THREE.MathUtils.degToRad(value);
-        });
-        rotationFolder.add(light.rotation, 'z', 0, 360).name('Z').setValue(initialRotationZ).onChange(function(value) {
-            light.rotation.z = THREE.MathUtils.degToRad(value);
-        });
+        function updateRotation() {
+            light.rotation.x = THREE.MathUtils.degToRad(rotationControls.rotationX);
+            light.rotation.y = THREE.MathUtils.degToRad(rotationControls.rotationY);
+            light.rotation.z = THREE.MathUtils.degToRad(rotationControls.rotationZ);
+        }
         lightFolder.open();
 
         // let ambientLight = new THREE.AmbientLight(0x101010);
@@ -348,8 +346,6 @@ function app() {
         requestAnimationFrame(this.render);
         this._controls.update();
         this._composer.render();
-
-        console.log(JSON.stringify(this._light.target.position));
     }
 }
 
