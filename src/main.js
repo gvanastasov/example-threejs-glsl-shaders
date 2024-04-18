@@ -280,8 +280,13 @@ function app() {
         }
 
         this.createPropertyControls = (shader) => {
-            var folder = this._gui.__folders['Custom Material'] || this._gui.addFolder('Custom Material');
-        
+            var folder = this._gui.__folders['Custom Material'] 
+            if (folder) {
+                this._gui.removeFolder(folder);
+            } else {
+                folder = this._gui.addFolder('Custom Material');
+            }
+
             for (let i = 0; i < shader.props.length; i++) {
                 const prop = shader.props[i];
 
