@@ -6,6 +6,16 @@ import * as dat from 'dat.gui';
 
 import Shaders from './shaders';
 
+const guiControls = {
+    color: function (c) {
+        let colorInternal = c;
+        if (typeof(colorInternal) === 'string') {
+            colorInternal = new THREE.Color(c);
+        }
+        this.color = colorInternal.getHex();
+    }
+}
+
 function app() {
     this._el = document.getElementById('app');
 
@@ -14,18 +24,171 @@ function app() {
      */
     this._gui = new dat.GUI();
     this._composer = null;
-    this._controls = null;
-    this._scene = null;
-    this._camera = null;
     this._renderer = null;
+    this._controls = null;
 
-    this._sphere = null;
+    this._scene = {
+        ref: null,
+        objects: {
+            sceneCamera: {
+                ref: null,
+                name: 'Scene Camera',
+                create: function() {
+                    const camera = new THREE.PerspectiveCamera(60, 1920 / 1080, 1.0, 1000.0);
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    camera.position.set(50, 50, -50);
+                    camera.lookAt(0, 0, 0);
+                    return camera;
+                }
+            },
+            directionLight: {
+                ref: null,
+                name: 'Main Light',
+                create: function() {
+                    let light = new THREE.DirectionalLight(0xFFFFFF, 1.0);
+                    light.position.set(50, 100, 10);
+                    light.target.position.set(0, 0, -1);
+                    light.lookAt(0,0,0);
+                    light.castShadow = true;
+                    light.shadow.bias = -0.001;
+                    light.shadow.mapSize.width = 2048;
+                    light.shadow.mapSize.height = 2048;
+                    light.shadow.camera.near = 0.1;
+                    light.shadow.camera.far = 500.0;
+                    light.shadow.camera.near = 0.5;
+                    light.shadow.camera.far = 500.0;
+                    light.shadow.camera.left = 100;
+                    light.shadow.camera.right = -100;
+                    light.shadow.camera.top = 100;
+                    light.shadow.camera.bottom = -100;
+                    light.add(light.target);
+
+                    const helper = new THREE.DirectionalLightHelper(light, 3);
+                    helper.visible = false;
+                    helper.update();
+                    light.add(helper);
+
+                    return light;
+                },
+                /**
+                 * @param {dat.GUI} parent
+                 */
+                gui: function(parent) {
+                    const g = parent.addFolder('Directional Light');
+
+                    g.add(this, 'intensity', 0, 10).name('Intensity');
+
+                    const lcc = new guiControls.color(this.color);
+                    g.addColor(lcc, 'color').name('Color').onChange((color) => {
+                        this.color = new THREE.Color(color);
+                    });
+
+                    const positionFolder = g.addFolder('Position');
+                    positionFolder.add(this.position, 'x').name('X');
+                    positionFolder.add(this.position, 'y').name('Y');
+                    positionFolder.add(this.position, 'z').name('Z');
+                    positionFolder.domElement.addEventListener('click', () => {
+                        helper.visible = !positionFolder.closed;
+                    })
+            
+                    var rotationFolder = g.addFolder('Rotation');
+                    var rotationControls = {
+                        rotationX: THREE.MathUtils.radToDeg(this.rotation.x),
+                        rotationY: THREE.MathUtils.radToDeg(this.rotation.y),
+                        rotationZ: THREE.MathUtils.radToDeg(this.rotation.z),
+                    };
+                    const updateRotation = () => {
+                        this.rotation.x = THREE.MathUtils.degToRad(rotationControls.rotationX);
+                        this.rotation.y = THREE.MathUtils.degToRad(rotationControls.rotationY);
+                        this.rotation.z = THREE.MathUtils.degToRad(rotationControls.rotationZ);
+                    }
+                    rotationFolder.add(rotationControls, 'rotationX').name('Rotation X').onChange(updateRotation);
+                    rotationFolder.add(rotationControls, 'rotationY').name('Rotation Y').onChange(updateRotation);
+                    rotationFolder.add(rotationControls, 'rotationZ').name('Rotation Z').onChange(updateRotation);
+                    
+                    g.open();
+                }
+            },
+            ambientLight: {
+                ref: null,
+                name: 'Ambient Light',
+                create: function() {
+                    return new THREE.AmbientLight(0x101010);
+                }
+            },
+            floor: {
+                ref: null,
+                name: 'Floor',
+                create: function() {
+                    const plane = new THREE.Mesh(
+                        new THREE.PlaneGeometry(100, 100, 10, 10),
+                        new THREE.MeshStandardMaterial({
+                            color: 0xFFFFFF,
+                        }
+                    ));
+                    plane.castShadow = false;
+                    plane.receiveShadow = true;
+                    plane.rotation.x = -Math.PI / 2;
+                    return plane;
+                }
+            },
+            target: {
+                ref: null,
+                name: 'Target',
+                create: function() {
+                    const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+                    const geometry = new THREE.SphereGeometry(8, 32, 32);
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    mesh.position.set(0, 10, 0);
+                    return mesh;
+                }
+            },
+            shadowCaster: {
+                ref: null,
+                name: 'Shadow Caster',
+                create: function() {
+                    const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+                    const geometry = new THREE.SphereGeometry(3, 16, 16);
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    mesh.position.set(15, 35, 0);
+                    return mesh;
+                },
+                /**
+                 * @param {dat.GUI} parent
+                 */
+                gui: function(parent) {
+                    const g = parent.addFolder('Shadow Caster');
+                    g.add(this, 'visible').name('Visible');
+                    g.open();
+                }
+            }
+        }
+    }
 
     this.start = function() {
         this.configure();
         this.render();
     }
-    this._light = null;
+
+    this.populateScene = function() {
+        Object.keys(this._scene.objects).forEach(key => {
+            var object = this._scene.objects[key];
+            
+            var sceneObject = object.create();
+            sceneObject.name = object.name;
+            
+            this._scene.objects[key].ref = (sceneObject);
+            this._scene.ref.add(sceneObject);
+
+            object.gui?.call(sceneObject, this._gui);
+        });
+    }   
+    
     this.configure = function() {
         this._renderer = new THREE.WebGLRenderer({ antialias: true });
         this._renderer.setSize(window.innerWidth, window.innerHeight);
@@ -33,111 +196,14 @@ function app() {
         this._renderer.shadowMap.enabled = true;
         this._renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-        this._camera = new THREE.PerspectiveCamera(60, 1920 / 1080, 1.0, 1000.0);
-        this._camera.aspect = window.innerWidth / window.innerHeight;
-        this._camera.updateProjectionMatrix();
-        this._camera.position.set(50, 50, -50);
-        this._camera.lookAt(0, 0, 0);
+        this._scene.ref = new THREE.Scene();
+        this.populateScene();
 
-        this._scene = new THREE.Scene();
-
-        let light = new THREE.DirectionalLight(0xFFFFFF, 1.0);
-        light.position.set(50, 100, 10);
-        light.target.position.set(0, 0, -1);
-        light.lookAt(0,0,0);
-        light.castShadow = true;
-        light.shadow.bias = -0.001;
-        light.shadow.mapSize.width = 2048;
-        light.shadow.mapSize.height = 2048;
-        light.shadow.camera.near = 0.1;
-        light.shadow.camera.far = 500.0;
-        light.shadow.camera.near = 0.5;
-        light.shadow.camera.far = 500.0;
-        light.shadow.camera.left = 100;
-        light.shadow.camera.right = -100;
-        light.shadow.camera.top = 100;
-        light.shadow.camera.bottom = -100;
-        light.add(light.target);
-        this._scene.add(light);
-        this._light = light;
-
-        const directionalLightHelper = new THREE.DirectionalLightHelper(light, 3);
-        directionalLightHelper.visible = false;
-        this._scene.add(directionalLightHelper);
-        directionalLightHelper.update(); 
-
-        const lightColorControl = function (l) {
-            this.color = l.color.getHex();
-        }
-        const lcc = new lightColorControl(light);
-        const lightFolder = this._gui.addFolder('Directional Light');
-        lightFolder.add(light, 'intensity', 0, 10).name('Intensity');
-        lightFolder.addColor(lcc, 'color').name('Color').onChange(function(color) {
-            light.color = new THREE.Color(color);
-        });
-        const positionFolder = lightFolder.addFolder('Position');
-        positionFolder.add(light.position, 'x').name('X');
-        positionFolder.add(light.position, 'y').name('Y');
-        positionFolder.add(light.position, 'z').name('Z');
-        positionFolder.domElement.addEventListener('click', () => {
-            directionalLightHelper.visible = !positionFolder.closed;
-        })
-
-        var rotationFolder = lightFolder.addFolder('Rotation');
-        var rotationControls = {
-            rotationX: THREE.MathUtils.radToDeg(light.rotation.x),
-            rotationY: THREE.MathUtils.radToDeg(light.rotation.y),
-            rotationZ: THREE.MathUtils.radToDeg(light.rotation.z),
-        };
-        rotationFolder.add(rotationControls, 'rotationX').name('Rotation X').onChange(updateRotation);
-        rotationFolder.add(rotationControls, 'rotationY').name('Rotation Y').onChange(updateRotation);
-        rotationFolder.add(rotationControls, 'rotationZ').name('Rotation Z').onChange(updateRotation);
-        rotationFolder.open();
-
-        function updateRotation() {
-            light.rotation.x = THREE.MathUtils.degToRad(rotationControls.rotationX);
-            light.rotation.y = THREE.MathUtils.degToRad(rotationControls.rotationY);
-            light.rotation.z = THREE.MathUtils.degToRad(rotationControls.rotationZ);
-        }
-        lightFolder.open();
-
-        let ambientLight = new THREE.AmbientLight(0x101010);
-        this._scene.add(ambientLight);
-
-        const plane = new THREE.Mesh(
-            new THREE.PlaneGeometry(100, 100, 10, 10),
-            new THREE.MeshStandardMaterial({
-                color: 0xFFFFFF,
-            }
-        ));
-        plane.castShadow = false;
-        plane.receiveShadow = true;
-        plane.rotation.x = -Math.PI / 2;
-        this._scene.add(plane);
-
-        const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
-        const geometry = new THREE.SphereGeometry(8, 32, 32);
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        mesh.position.set(0, 10, 0);
-        this._scene.add(mesh);
-        this._sphere = mesh;
-
-        const m = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
-        const g = new THREE.SphereGeometry(3, 16, 16);
-        const mm = new THREE.Mesh(g, m);
-        mm.castShadow = true;
-        mm.receiveShadow = true;
-        mm.position.set(15, 35, 0);
-        
-        this._scene.add(mm);
-
-        this._controls = new OrbitControls(this._camera, this._renderer.domElement);
+        this._controls = new OrbitControls(this._scene.objects.sceneCamera.ref, this._renderer.domElement);
         this._controls.target.set(0, 0, 0);
 
         this._composer = new EffectComposer(this._renderer);
-        this._composer.addPass(new RenderPass(this._scene, this._camera));
+        this._composer.addPass(new RenderPass(this._scene.ref, this._scene.objects.sceneCamera.ref));
 
         var menu = document.createElement('div');
         menu.id = 'menu';
@@ -214,84 +280,42 @@ function app() {
         }
 
         this.createPropertyControls = (shader) => {
-            const properties = document.getElementById('properties');
-            properties.innerHTML = '';
-
-            const heading = document.createElement('h4');
-            heading.innerHTML = `Shader: ${shader.name} (${shader.group})`;
-            properties.appendChild(heading);
-
+            var folder = this._gui.__folders['Custom Material'] || this._gui.addFolder('Custom Material');
+        
             for (let i = 0; i < shader.props.length; i++) {
                 const prop = shader.props[i];
 
-                if (prop.editable === false) continue;
-
-                // todo: refactor this to support more types
-                if (prop.type === 'Vector2') {
-                    const propElement = document.createElement('div');
-                    propElement.classList.add('property');
-
-                    const label = document.createElement('label');
-                    label.htmlFor = prop.name;
-                    label.innerHTML = prop.label;
-
-                    const inputX = document.createElement('input');
-                    inputX.type = 'number';
-                    inputX.id = prop.name + '-x';
-                    inputX.value = prop.value.x;
-                    inputX.step = prop.step;
-                    inputX.oninput = (e) => {
-                        prop.value.x = parseFloat(e.target.value);
-                        const value = new THREE.Vector2(prop.value.x, inputY.value);
-
-                        this._sphere.material.uniforms[prop.name].value = value;
-                    }
-
-                    const inputY = document.createElement('input');
-                    inputY.type = 'number';
-                    inputY.id = prop.name + '-y';
-                    inputY.value = prop.value.y;
-                    inputY.step = prop.step;
-                    inputY.oninput = (e) => {
-                        prop.value.y = parseFloat(e.target.value);
-
-                        const value = new THREE.Vector2(inputX.value, prop.value.y);
-
-                        this._sphere.material.uniforms[prop.name].value = value;
-                    }
-
-                    propElement.appendChild(label);
-                    propElement.appendChild(inputX);
-                    propElement.appendChild(inputY);
-                    properties.appendChild(propElement);
+                if (prop.editable === false) {
                     continue;
-                } else {
-                    const propElement = document.createElement('div');
-                    propElement.classList.add('property');
-    
-                    const label = document.createElement('label');
-                    label.htmlFor = prop.name;
-                    label.innerHTML = prop.label;
-    
-                    const input = document.createElement('input');
-                    input.type = prop.type;
-                    input.id = prop.name;
-                    input.value = prop.value;
-                    input.oninput = (e) => {
-                        prop.value = e.target.value;
-                        
-                        this._sphere.material.uniforms[prop.name].value = 
-                            !!prop.valueParser
-                            ? prop.valueParser(prop.value)
-                            : prop.value;
-                    }
-    
-                    propElement.appendChild(label);
-                    propElement.appendChild(input);
-                    properties.appendChild(propElement);
                 }
 
+                if (prop.type === 'Vector2') {
+                    const vec2 = new THREE.Vector2(prop.value.x, prop.value.y);
+                    const vectorFolder = folder.addFolder(prop.label);
+                    vectorFolder.add(vec2, 'x').name('X').step(0.01).onChange((value) => {
+                        vec2.x = value;
+                        this._scene.objects.target.ref.material.uniforms[prop.name].value = vec2;
+                    });
+                    vectorFolder.add(vec2, 'y').name('Y').step(0.01).onChange((value) => {
+                        vec2.y = value;
+                        this._scene.objects.target.ref.material.uniforms[prop.name].value = vec2;
+                    });
+                    vectorFolder.open();
+                } else if(prop.type === 'color') { 
+                    const lcc = new guiControls.color(prop.value);
+                    folder.addColor(lcc, 'color').name('Color').onChange((color) => {
+                        this._scene.objects.target.ref.material.uniforms[prop.name].value = new THREE.Color(color);
+                    });
+                } else {
+                    folder.add(this._scene.objects.target.ref.material.uniforms[prop.name], 'value').name(prop.label).onChange((value) => {
+                        this._scene.objects.target.ref.material.uniforms[prop.name].value = 
+                            !!prop.valueParser
+                            ? prop.valueParser(value)
+                            : value;
+                    });
+                }
             }
+            folder.open();
         }
 
         this.updateShader = (shader) => {
@@ -339,7 +363,7 @@ function app() {
                 shader.fragmentShader = shader.fragmentShader.replace('#version 300 es\n', '');
             }
 
-            this._sphere.material = customMaterial;
+            this._scene.objects.target.ref.material = customMaterial;
 
             this.createPropertyControls(shader);
         }
@@ -348,8 +372,8 @@ function app() {
     }
 
     this._handleWindowResize = () => {
-        this._camera.aspect = window.innerWidth / window.innerHeight;
-        this._camera.updateProjectionMatrix();
+        this._scene.objects.sceneCamera.ref.aspect = window.innerWidth / window.innerHeight;
+        this._scene.objects.sceneCamera.ref.updateProjectionMatrix();
         this._renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
