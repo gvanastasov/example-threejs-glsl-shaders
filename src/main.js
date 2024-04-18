@@ -101,8 +101,8 @@ function app() {
         }
         lightFolder.open();
 
-        // let ambientLight = new THREE.AmbientLight(0x101010);
-        // this._scene.add(ambientLight);
+        let ambientLight = new THREE.AmbientLight(0x101010);
+        this._scene.add(ambientLight);
 
         const plane = new THREE.Mesh(
             new THREE.PlaneGeometry(100, 100, 10, 10),
@@ -118,9 +118,20 @@ function app() {
         const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
         const geometry = new THREE.SphereGeometry(8, 32, 32);
         const mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         mesh.position.set(0, 10, 0);
         this._scene.add(mesh);
         this._sphere = mesh;
+
+        const m = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+        const g = new THREE.SphereGeometry(3, 16, 16);
+        const mm = new THREE.Mesh(g, m);
+        mm.castShadow = true;
+        mm.receiveShadow = true;
+        mm.position.set(15, 35, 0);
+        
+        this._scene.add(mm);
 
         this._controls = new OrbitControls(this._camera, this._renderer.domElement);
         this._controls.target.set(0, 0, 0);
