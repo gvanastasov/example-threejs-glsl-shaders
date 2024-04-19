@@ -15,5 +15,6 @@ export default {
             value: '#FF0000', 
             valueParser: (value) => new THREE.Color(value)
         }
-    ]
+    ],
+    lights: true,
 }

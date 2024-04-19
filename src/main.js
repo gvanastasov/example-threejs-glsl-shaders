@@ -16,6 +16,29 @@ const guiControls = {
     }
 }
 
+const engineUniforms = {
+    ambientLightColor: { value: null },
+    lightProbe: { value: null },
+    directionalLights: { value: null },
+    directionalLightShadows: { value: null },
+    spotLights: { value: null },
+    spotLightShadows: { value: null },
+    rectAreaLights: { value: null },
+    ltc_1: { value: null },
+    ltc_2: { value: null },
+    pointLights: { value: null },
+    pointLightShadows: { value: null },
+    hemisphereLights: { value: null },
+
+    directionalShadowMap: { value: null },
+    directionalShadowMatrix: { value: null },
+    spotShadowMap: { value: null },
+    spotLightMatrix: { value: null },
+    spotLightMap: { value: null },
+    pointShadowMap: { value: null },
+    pointShadowMatrix: { value: null },
+};
+
 function app() {
     this._el = document.getElementById('app');
 
@@ -324,7 +347,7 @@ function app() {
         }
 
         this.updateShader = (shader) => {
-            const uniforms = shader.props.reduce((obj, prop) => {
+            const shaderUniforms = shader.props.reduce((obj, prop) => {
                 obj[prop.name] = { value: prop.valueParser ? prop.valueParser(prop.value) : prop.value };
                 return obj;
             }, {});
@@ -334,32 +357,14 @@ function app() {
                 vertexShader: shader.vert,
                 fragmentShader: shader.frag,
                 uniforms: {
-                    ambientLightColor: { value: null },
-                    lightProbe: { value: null },
-                    directionalLights: { value: null },
-                    directionalLightShadows: { value: null },
-                    spotLights: { value: null },
-                    spotLightShadows: { value: null },
-                    rectAreaLights: { value: null },
-                    ltc_1: { value: null },
-                    ltc_2: { value: null },
-                    pointLights: { value: null },
-                    pointLightShadows: { value: null },
-                    hemisphereLights: { value: null },
-
-                    directionalShadowMap: { value: null },
-                    directionalShadowMatrix: { value: null },
-                    spotShadowMap: { value: null },
-                    spotLightMatrix: { value: null },
-                    spotLightMap: { value: null },
-                    pointShadowMap: { value: null },
-                    pointShadowMatrix: { value: null },
-                    ...uniforms
+                    // todo: lets align with engine cast & receive shadows
+                    ...(shader.lights ? engineUniforms : {}),
+                    ...shaderUniforms
                 },
             });
 
             customMaterial.name = 'Custom Material';
-            customMaterial.lights = true;
+            customMaterial.lights = !!shader.lights;
 
             customMaterial.onBeforeCompile = function(shader) {
                 // NOTE: This is a hack to remove the #version 300 es from the shaders
