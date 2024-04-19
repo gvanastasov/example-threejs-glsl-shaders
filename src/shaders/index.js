@@ -4,6 +4,7 @@ import TextureUnlit from './03_texture_unlit';
 import VertexLit from './04_vertex_lit';
 import FragmentLit from './05_fragment_lit';
 import ShadowMap from './06_shadow_map';
+import VertexNormal from './07_vertex_normal';
 
 import Packing from './packing.glsl';
 import Lighting from './lighting.glsl';
@@ -22,6 +23,7 @@ const extensions = {
 const shaders = [
     ColorUnlit,
     UVsUnlit,
+    VertexNormal,
     TextureUnlit,
     VertexLit,
     FragmentLit,
