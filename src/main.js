@@ -162,6 +162,7 @@ function app() {
                 create: function() {
                     const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
                     const geometry = new THREE.SphereGeometry(8, 16, 16);
+                    // geometry.computeTangents();
                     const mesh = new THREE.Mesh(geometry, material);
                     mesh.castShadow = true;
                     mesh.receiveShadow = true;
@@ -365,7 +366,6 @@ function app() {
 
             customMaterial.name = 'Custom Material';
             customMaterial.lights = !!shader.lights;
-
             customMaterial.onBeforeCompile = function(shader) {
                 // NOTE: This is a hack to remove the #version 300 es from the shaders
                 // and make the linter happy with the syntax.
@@ -374,6 +374,9 @@ function app() {
             }
 
             this._scene.objects.target.ref.material = customMaterial;
+
+            // todo: make conditional
+            this._scene.objects.target.ref.geometry.computeTangents();
 
             this.createPropertyControls(shader);
         }
