@@ -7,6 +7,7 @@ import ShadowMap from './06_shadow_map';
 import VertexNormal from './07_vertex_normal';
 import NormalMap from './08_normal_map';
 import TransparentUnlit from './09_transparent';
+import InnerGlow from './10_inner_glow';
 
 import Packing from './packing.glsl';
 import Lighting from './lighting.glsl';
@@ -32,6 +33,7 @@ const shaders = [
     VertexNormal,
     NormalMap,
     TransparentUnlit,
+    InnerGlow,
 ];
 
 shaders.forEach(x => {

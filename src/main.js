@@ -357,7 +357,7 @@ function app() {
                     vectorFolder.open();
                 } else if(prop.type === 'color') { 
                     const lcc = new guiControls.color(prop.value);
-                    folder.addColor(lcc, 'color').name('Color').onChange((color) => {
+                    folder.addColor(lcc, 'color').name(prop.label).onChange((color) => {
                         this._scene.objects.target.ref.material.uniforms[prop.name].value = new THREE.Color(color);
                     });
                 } else {
