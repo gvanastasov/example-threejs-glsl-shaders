@@ -366,6 +366,7 @@ function app() {
 
             customMaterial.name = 'Custom Material';
             customMaterial.lights = !!shader.lights;
+            customMaterial.transparent = !!shader.transparent;
             customMaterial.onBeforeCompile = function(shader) {
                 // NOTE: This is a hack to remove the #version 300 es from the shaders
                 // and make the linter happy with the syntax.
