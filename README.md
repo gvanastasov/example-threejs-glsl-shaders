@@ -31,6 +31,8 @@ WebGL is simply based on the fact that the HTML5 canvas element provides us with
 2. [UVs](./src/shaders/02_uvs_unlit/index.js)
 3. [Texture](./src/shaders/03_texture_unlit/index.js)
 
+> im still using three.js built-in render pipeline to inject global uniforms into the shaders, for example directional light information, or generated shadow maps, although one can also generate those himself but thats beyound the scope of this example repo.
+
 ## Credits
 
 - threejs
