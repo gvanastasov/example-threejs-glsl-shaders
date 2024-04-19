@@ -161,7 +161,7 @@ function app() {
                 name: 'Target',
                 create: function() {
                     const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
-                    const geometry = new THREE.SphereGeometry(8, 32, 32);
+                    const geometry = new THREE.SphereGeometry(8, 16, 16);
                     const mesh = new THREE.Mesh(geometry, material);
                     mesh.castShadow = true;
                     mesh.receiveShadow = true;

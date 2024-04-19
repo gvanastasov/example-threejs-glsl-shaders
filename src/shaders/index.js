@@ -2,7 +2,8 @@ import ColorUnlit from './01_color_unlit';
 import UVsUnlit from './02_uvs_unlit';
 import TextureUnlit from './03_texture_unlit';
 import VertexLit from './04_vertex_lit';
-import ShadowMap from './05_shadow_map';
+import FragmentLit from './05_fragment_lit';
+import ShadowMap from './06_shadow_map';
 
 import Packing from './packing.glsl';
 import Lighting from './lighting.glsl';
@@ -23,6 +24,7 @@ const shaders = [
     UVsUnlit,
     TextureUnlit,
     VertexLit,
+    FragmentLit,
     ShadowMap,
 ];
 
