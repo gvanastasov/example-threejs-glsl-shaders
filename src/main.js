@@ -162,12 +162,37 @@ function app() {
                 create: function() {
                     const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
                     const geometry = new THREE.SphereGeometry(8, 16, 16);
-                    // geometry.computeTangents();
                     const mesh = new THREE.Mesh(geometry, material);
                     mesh.castShadow = true;
                     mesh.receiveShadow = true;
                     mesh.position.set(0, 10, 0);
                     return mesh;
+                },
+                /**
+                 * @param {dat.GUI} parent
+                 */
+                gui: function(parent) {
+                    const g = parent.addFolder('Target');
+                    g.add(this, 'visible').name('Visible');
+                    const geometryType = function(type) {
+                        this.type = type;
+                    }
+                    const gt = new geometryType('Sphere');
+                    const options = {
+                        Sphere: { type: 'Sphere', geometry: () => (new THREE.SphereGeometry(8, 16, 16)) },
+                        Box: { type: 'Box', geometry: () => (new THREE.BoxGeometry(8, 8, 8)) },
+                        Cylinder: { type: 'Cylinder', geometry: () => (new THREE.CylinderGeometry(8, 8, 16, 16)) },
+                        Torus: { type: 'Torus', geometry: () => (new THREE.TorusGeometry(8, 3, 16, 100)) },
+                        Knot: { type: 'Knot', geometry: () => (new THREE.TorusKnotGeometry(8, 3, 100, 16)) },
+                    }
+                    var geometry = g.add(gt, 'type', Object.keys(options)).name('Geometry').onChange((value) => {
+                        gt.type = value;
+                        this.geometry = options[value].geometry();
+                        // todo: this should be conditional
+                        this.geometry.computeTangents();
+                    });
+                    geometry.setValue('Sphere');
+                    g.open();
                 }
             },
             shadowCaster: {
@@ -304,11 +329,11 @@ function app() {
         }
 
         this.createPropertyControls = (shader) => {
-            var folder = this._gui.__folders['Custom Material'] 
+            var folder = this._gui.__folders['Target Material'] 
             if (folder) {
                 this._gui.removeFolder(folder);
             } else {
-                folder = this._gui.addFolder('Custom Material');
+                folder = this._gui.addFolder('Target Material');
             }
 
             for (let i = 0; i < shader.props.length; i++) {
