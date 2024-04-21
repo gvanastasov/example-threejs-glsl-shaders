@@ -16,29 +16,6 @@ const guiControls = {
     }
 }
 
-const engineUniforms = {
-    ambientLightColor: { value: null },
-    lightProbe: { value: null },
-    directionalLights: { value: null },
-    directionalLightShadows: { value: null },
-    spotLights: { value: null },
-    spotLightShadows: { value: null },
-    rectAreaLights: { value: null },
-    ltc_1: { value: null },
-    ltc_2: { value: null },
-    pointLights: { value: null },
-    pointLightShadows: { value: null },
-    hemisphereLights: { value: null },
-
-    directionalShadowMap: { value: null },
-    directionalShadowMatrix: { value: null },
-    spotShadowMap: { value: null },
-    spotLightMatrix: { value: null },
-    spotLightMap: { value: null },
-    pointShadowMap: { value: null },
-    pointShadowMatrix: { value: null },
-};
-
 function app() {
     this._el = document.getElementById('app');
 
@@ -69,7 +46,7 @@ function app() {
                 ref: null,
                 name: 'Main Light',
                 create: function() {
-                    let light = new THREE.DirectionalLight(0xFFFFFF, 1.0);
+                    let light = new THREE.DirectionalLight(0xffefcb, 1.0);
                     light.position.set(50, 100, 10);
                     light.target.position.set(0, 0, -1);
                     light.lookAt(0,0,0);
@@ -137,7 +114,7 @@ function app() {
                 ref: null,
                 name: 'Ambient Light',
                 create: function() {
-                    return new THREE.AmbientLight(0x101010);
+                    return new THREE.AmbientLight(new THREE.Color(0.1, 0.1, 0.1));
                 }
             },
             floor: {
@@ -384,7 +361,7 @@ function app() {
                 fragmentShader: shader.frag,
                 uniforms: {
                     // todo: lets align with engine cast & receive shadows
-                    ...(shader.lights ? engineUniforms : {}),
+                    ...(shader.lights ? THREE.UniformsLib.lights : {}),
                     ...shaderUniforms
                 },
             });
