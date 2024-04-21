@@ -26,6 +26,7 @@ function app() {
     this._composer = null;
     this._renderer = null;
     this._controls = null;
+    this._clock = new THREE.Clock();
 
     this._scene = {
         ref: null,
@@ -362,7 +363,8 @@ function app() {
                 uniforms: {
                     // todo: lets align with engine cast & receive shadows
                     ...(shader.lights ? THREE.UniformsLib.lights : {}),
-                    ...shaderUniforms
+                    ...shaderUniforms,
+                    uTime: { value: 0 },
                 },
             });
 
@@ -377,9 +379,11 @@ function app() {
             }
 
             this._scene.objects.target.ref.material = customMaterial;
+            this._scene.objects.shadowCaster.ref.material = customMaterial;
 
             // todo: make conditional
             this._scene.objects.target.ref.geometry.computeTangents();
+            this._scene.objects.shadowCaster.ref.geometry.computeTangents();
 
             this.createPropertyControls(shader);
         }
@@ -397,6 +401,16 @@ function app() {
         requestAnimationFrame(this.render);
         this._controls.update();
         this._composer.render();
+
+        const elapsedTime = this._clock.getElapsedTime();
+
+        if (this._scene.objects.target.ref.material.uniforms) {
+            this._scene.objects.target.ref.material.uniforms.uTime.value = elapsedTime;
+        }
+
+        if (this._scene.objects.shadowCaster.ref.material.uniforms) {
+            this._scene.objects.shadowCaster.ref.material.uniforms.uTime.value = elapsedTime;
+        }
     }
 }
 

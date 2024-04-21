@@ -9,6 +9,7 @@ import NormalMap from './08_normal_map';
 import TransparentUnlit from './09_transparent';
 import InnerGlow from './10_inner_glow';
 import Toon from './11_toon';
+import Animated from './12_animated'
 
 import Packing from './packing.glsl';
 import Lighting from './lighting.glsl';
@@ -36,6 +37,7 @@ const shaders = [
     TransparentUnlit,
     InnerGlow,
     Toon,
+    Animated,
 ];
 
 shaders.forEach(x => {
