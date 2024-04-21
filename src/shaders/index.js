@@ -10,6 +10,7 @@ import TransparentUnlit from './09_transparent';
 import InnerGlow from './10_inner_glow';
 import Toon from './11_toon';
 import Animated from './12_animated'
+import Refracted from './13_refracted';
 
 import Packing from './packing.glsl';
 import Lighting from './lighting.glsl';
@@ -38,6 +39,7 @@ const shaders = [
     InnerGlow,
     Toon,
     Animated,
+    Refracted,
 ];
 
 shaders.forEach(x => {

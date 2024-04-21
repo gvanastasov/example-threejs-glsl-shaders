@@ -6,6 +6,10 @@ import * as dat from 'dat.gui';
 
 import Shaders from './shaders';
 
+const skyTexture = new THREE.TextureLoader().load('static/skybox.png');
+skyTexture.mapping = THREE.EquirectangularRefractionMapping;
+skyTexture.colorSpace = THREE.SRGBColorSpace;
+
 const guiControls = {
     color: function (c) {
         let colorInternal = c;
@@ -224,6 +228,7 @@ function app() {
         this._renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         this._scene.ref = new THREE.Scene();
+        this._scene.ref.background = skyTexture;
         this.populateScene();
 
         this._controls = new OrbitControls(this._scene.objects.sceneCamera.ref, this._renderer.domElement);
@@ -378,12 +383,29 @@ function app() {
                 shader.fragmentShader = shader.fragmentShader.replace('#version 300 es\n', '');
             }
 
+            if (shader.requestRenderScene) {
+                customMaterial.renderTextures = { scene: new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight) }       
+            }
+
+            customMaterial.onBeforeRender = (renderer, scene, camera, geometry, object, group) => {
+                if (object.material.uniforms.u_screenWidth) {
+                    object.material.uniforms.u_screenWidth.value = window.innerWidth;
+                }
+
+                if (object.material.uniforms.u_screenHeight) {
+                    object.material.uniforms.u_screenHeight.value = window.innerHeight;
+                }
+            }
+
             this._scene.objects.target.ref.material = customMaterial;
             this._scene.objects.shadowCaster.ref.material = customMaterial;
 
             // todo: make conditional
             this._scene.objects.target.ref.geometry.computeTangents();
             this._scene.objects.shadowCaster.ref.geometry.computeTangents();
+
+            // hack: avoiding RT loop
+            this._scene.objects.shadowCaster.ref.visible = !shader.requestRenderScene;
 
             this.createPropertyControls(shader);
         }
@@ -399,6 +421,21 @@ function app() {
 
     this.render = () => {
         requestAnimationFrame(this.render);
+        
+        // hack: quick and dirty - injecting the scene texture into the target material
+        // also hiding the target object to avoid rendering it into itself. Only for 
+        // shaders that request the scene texture into a fake grab pass. Probably theres
+        // a better way to do this... but for now this.
+        object = this._scene.objects.target.ref;
+        if (object.material.renderTextures) {
+            object.visible = false;
+            this._renderer.setRenderTarget(object.material.renderTextures.scene);
+            this._renderer.render(this._scene.ref, this._scene.objects.sceneCamera.ref);
+            this._renderer.setRenderTarget(null);
+            object.visible = true;
+            object.material.uniforms.u_sceneTexture.value = object.material.renderTextures.scene.texture;
+        }
+
         this._controls.update();
         this._composer.render();
 
