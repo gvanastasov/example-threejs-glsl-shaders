@@ -144,16 +144,25 @@ function app() {
                     return plane;
                 }
             },
-            test: {
+            insider: {
                 ref: null,
-                name: 'Inside',
+                name: 'Insider',
                 create: function() {
                     const material = new THREE.MeshStandardMaterial({ color: 0x00FF00 });
                     const geometry = new THREE.SphereGeometry(4, 16, 16);
                     const mesh = new THREE.Mesh(geometry, material);
 
                     mesh.position.set(0, 10, 0);
+                    mesh.visible = false;
                     return mesh;
+                },
+                /**
+                 * @param {dat.GUI} parent
+                 */
+                gui: function(parent) {
+                    const g = parent.addFolder('Insider');
+                    g.add(this, 'visible').name('Visible');
+                    g.open();
                 }
             },
             target: {
@@ -205,6 +214,7 @@ function app() {
                     mesh.castShadow = true;
                     mesh.receiveShadow = true;
                     mesh.position.set(15, 35, 0);
+                    mesh.visible = false;
                     return mesh;
                 },
                 /**
@@ -469,7 +479,6 @@ function app() {
 
         if (this._scene.objects.target.ref.material.uniforms && this._scene.objects.target.ref.material.uniforms.envMap) {
             this._scene.objects.target.ref.material.uniforms.envMap.value = envMap;
-            this._scene.objects.target.ref.material.uniforms.envMapRotation.value = new THREE.Matrix3().set(1, 0, 0, 0, 1, 0, 0, 0, 1);
         }
     }
 }
