@@ -9,7 +9,7 @@ export default {
     group: 'Advanced',
     vert,
     frag,
-    lights: true,
+    // lights: true,
     requestRenderScene: true,
     transparent: true,
     props: [
@@ -43,7 +43,7 @@ export default {
             label: 'Distortion',
             type: 'number',
             name: 'u_distortion',
-            value: 0.1,
+            value: 0.01,
             min: 0,
             max: 3,
             step: 0.01
@@ -53,16 +53,14 @@ export default {
             type: 'number',
             name: 'u_screenWidth',
             value: 800,
-            min: 0,
-            step: 1
+            editable: false,
         },
         {
             label: 'Screen Height',
             type: 'number',
             name: 'u_screenHeight',
             value: 600,
-            min: 0,
-            step: 1
+            editable: false,
         }
     ]
 }

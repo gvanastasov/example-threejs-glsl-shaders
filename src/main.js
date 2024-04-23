@@ -6,9 +6,15 @@ import * as dat from 'dat.gui';
 
 import Shaders from './shaders';
 
-const skyTexture = new THREE.TextureLoader().load('static/skybox.png');
-skyTexture.mapping = THREE.EquirectangularRefractionMapping;
-skyTexture.colorSpace = THREE.SRGBColorSpace;
+const cubeMapUrls = [
+    'static/skybox-posx.png', 'static/skybox-negx.png',
+    'static/skybox-posy.png', 'static/skybox-negy.png',
+    'static/skybox-posz.png', 'static/skybox-negz.png'
+];
+
+const envMap = new THREE.CubeTextureLoader().load(cubeMapUrls);
+envMap.generateMipmaps = false;
+envMap.mapping = THREE.CubeReflectionMapping;
 
 const guiControls = {
     color: function (c) {
@@ -138,12 +144,24 @@ function app() {
                     return plane;
                 }
             },
+            test: {
+                ref: null,
+                name: 'Inside',
+                create: function() {
+                    const material = new THREE.MeshStandardMaterial({ color: 0x00FF00 });
+                    const geometry = new THREE.SphereGeometry(4, 16, 16);
+                    const mesh = new THREE.Mesh(geometry, material);
+
+                    mesh.position.set(0, 10, 0);
+                    return mesh;
+                }
+            },
             target: {
                 ref: null,
                 name: 'Target',
                 create: function() {
                     const material = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
-                    const geometry = new THREE.SphereGeometry(8, 16, 16);
+                    const geometry = new THREE.SphereGeometry(8, 64, 64);
                     const mesh = new THREE.Mesh(geometry, material);
                     mesh.castShadow = true;
                     mesh.receiveShadow = true;
@@ -228,7 +246,7 @@ function app() {
         this._renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         this._scene.ref = new THREE.Scene();
-        this._scene.ref.background = skyTexture;
+        this._scene.ref.background = envMap;
         this.populateScene();
 
         this._controls = new OrbitControls(this._scene.objects.sceneCamera.ref, this._renderer.domElement);
@@ -447,6 +465,11 @@ function app() {
 
         if (this._scene.objects.shadowCaster.ref.material.uniforms) {
             this._scene.objects.shadowCaster.ref.material.uniforms.uTime.value = elapsedTime;
+        }
+
+        if (this._scene.objects.target.ref.material.uniforms && this._scene.objects.target.ref.material.uniforms.envMap) {
+            this._scene.objects.target.ref.material.uniforms.envMap.value = envMap;
+            this._scene.objects.target.ref.material.uniforms.envMapRotation.value = new THREE.Matrix3().set(1, 0, 0, 0, 1, 0, 0, 0, 1);
         }
     }
 }

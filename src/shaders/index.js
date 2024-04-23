@@ -11,6 +11,7 @@ import InnerGlow from './10_inner_glow';
 import Toon from './11_toon';
 import Animated from './12_animated'
 import Refracted from './13_refracted';
+import Cubemap from './14_cubemap';
 
 import Packing from './packing.glsl';
 import Lighting from './lighting.glsl';
@@ -40,6 +41,7 @@ const shaders = [
     Toon,
     Animated,
     Refracted,
+    Cubemap,
 ];
 
 shaders.forEach(x => {
