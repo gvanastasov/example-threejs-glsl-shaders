@@ -1,4 +1,4 @@
-# Example GLSL
+# Example Three.js GLSL shaders
 
 Example repository used for playing around with manual shading in three.js, from some simple (color) shading towards more advanced ones (refraction). 
 
