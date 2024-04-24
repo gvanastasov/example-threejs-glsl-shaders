@@ -276,6 +276,14 @@ function app() {
         this._el.appendChild(properties);
         this._el.appendChild(this._renderer.domElement);
 
+        var firstMenuGroup = document.querySelector('#menu ul > li');
+        if (firstMenuGroup) {
+            var firstMenuInput = firstMenuGroup.querySelector('input');
+            var firstMenuItem = firstMenuGroup.querySelector('ul > li');
+            firstMenuInput.checked = true;
+            firstMenuItem.click();
+        }
+
         window.addEventListener('resize', () => {
             this._handleWindowResize();
         }, false);
